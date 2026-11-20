@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -26,6 +25,8 @@ import vn.ducthe.organic.entity.BaseEntity;
 import vn.ducthe.organic.entity.CategoryEntity;
 import vn.ducthe.organic.entity.CustomerAddressEntity;
 import vn.ducthe.organic.entity.CustomerEntity;
+import vn.ducthe.organic.entity.CustomerVoucherEntity;
+import vn.ducthe.organic.service.LoyaltyService;
 import vn.ducthe.organic.entity.EmployeeEntity;
 import vn.ducthe.organic.entity.GoodsReceiptDetailEntity;
 import vn.ducthe.organic.entity.GoodsReceiptEntity;
@@ -45,25 +46,25 @@ import vn.ducthe.organic.entity.SupplierEntity;
 public class SampleDataSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(SampleDataSeeder.class);
     private static final String ACTIVE = "ACTIVE";
-    private static final int CUSTOMER_COUNT = 60;
+    private static final int CUSTOMER_COUNT = 3;
+    private static final String DEFAULT_PASSWORD = "Organic@123456";
     private static final ZoneId SHOP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final String CATALOG = """
-            rau|Rau củ quả|Lâm Đồng|7|Cải bó xôi:42000:Salad hoặc xào nhanh;Xà lách lô lô xanh:35000:Ăn kèm món cuốn;Cải kale:55000:Làm salad hoặc sinh tố;Cà chua bi:49000:Dùng cho salad và sốt;Cà rốt baby:38000:Hấp hoặc nướng;Củ dền đỏ:39000:Nấu súp hoặc ép nước;Bí đỏ hồ lô:32000:Nấu canh hoặc làm súp;Dưa leo baby:35000:Ăn tươi hoặc muối chua
-            trai-cay|Trái cây|Đồng Nai|14|Bưởi da xanh:85000:Tách múi dùng tươi;Chuối già Nam Mỹ:39000:Dùng tươi hoặc xay sinh tố;Xoài cát:79000:Để chín tự nhiên rồi dùng;Ổi lê:45000:Ăn tươi hoặc ép nước;Chanh dây tím:55000:Pha nước hoặc làm sốt;Thanh long ruột đỏ:49000:Dùng lạnh hoặc làm sinh tố;Cam sành:59000:Vắt nước hoặc tách múi;Dứa mật:42000:Ăn tươi hoặc nấu cùng món mặn
-            gao|Gạo và ngũ cốc|Sóc Trăng|240|Gạo lứt đỏ:56000:Ngâm trước khi nấu cơm;Gạo thơm hạt dài:52000:Nấu cơm hoặc cháo;Gạo lứt đen:75000:Nấu cơm phối trộn;Nếp cẩm:69000:Nấu xôi hoặc chè;Yến mạch cán dẹt:89000:Nấu cháo hoặc ngâm qua đêm;Hạt kê vàng:67000:Nấu cháo và cơm;Hạt kiều mạch:98000:Nấu hạt mềm hoặc rang;Gạo mầm:84000:Nấu cơm hoặc cháo mềm
-            dau-hat|Đậu và hạt|Đắk Lắk|180|Đậu xanh nguyên vỏ:48000:Nấu chè hoặc cháo;Đậu đỏ:54000:Nấu chè hoặc hầm;Đậu đen xanh lòng:49000:Nấu nước đậu hoặc chè;Đậu nành vàng:49000:Làm sữa đậu;Mè đen:65000:Rang rồi rắc lên món ăn;Hạt điều rang mộc:129000:Dùng ăn nhẹ;Hạt bí bóc vỏ:119000:Dùng cùng ngũ cốc;Hạt đậu gà:79000:Nấu mềm hoặc xay hummus
-            tra|Trà và thảo mộc|Thái Nguyên|270|Trà xanh lá rời:119000:Ủ với nước nóng;Trà gừng lát:89000:Hãm với nước nóng;Trà sả khô:65000:Pha trà thảo mộc;Trà hoa cúc:109000:Hãm riêng hoặc phối với táo đỏ;Trà bạc hà:85000:Dùng nóng hoặc thêm đá;Trà atisô đỏ:89000:Pha nước chua nhẹ;Trà lá sen:95000:Hãm cùng nước nóng;Trà vỏ quýt:99000:Pha cùng trà đen
-            gia-vi|Gia vị và nguyên liệu khô|Quảng Nam|365|Tiêu đen nguyên hạt:89000:Xay khi nêm món ăn;Bột nghệ vàng:69000:Tạo màu cho món kho;Bột quế:79000:Dùng cho bánh và thức uống;Bột gừng:75000:Nêm món xào hoặc làm bánh;Tỏi lát sấy:62000:Dùng cho món xào và sốt;Ớt bột:65000:Nêm theo độ cay mong muốn;Mộc nhĩ khô:79000:Ngâm mềm trước khi chế biến;Nấm hương khô:129000:Ngâm mềm rồi nấu súp
+            rau|Rau củ quả|Lâm Đồng|7|Cải bó xôi:42000:Salad hoặc xào nhanh;Cà rốt baby:38000:Hấp hoặc nướng
+            trai-cay|Trái cây|Đồng Nai|14|Bưởi da xanh:85000:Tách múi dùng tươi;Xoài cát:79000:Để chín tự nhiên rồi dùng
+            gao|Gạo và ngũ cốc|Sóc Trăng|240|Gạo lứt đỏ:56000:Ngâm trước khi nấu cơm;Yến mạch cán dẹt:89000:Nấu cháo hoặc ngâm qua đêm
             """;
     private static final String[] SURNAMES = {"Nguyễn", "Trần", "Lê", "Phạm", "Võ", "Huỳnh", "Đặng", "Bùi", "Đỗ", "Phan"};
     private static final String[] GIVEN_NAMES = {"Minh Anh", "Gia Hân", "Thanh Tùng", "Khánh Linh", "Đức Huy", "Ngọc Mai"};
 
     private final MongoTemplate mongo;
     private final SeedDataMigration migration;
+    private final LoyaltyService loyalty;
 
-    public SampleDataSeeder(MongoTemplate mongo, SeedDataMigration migration) {
+    public SampleDataSeeder(MongoTemplate mongo, SeedDataMigration migration, LoyaltyService loyalty) {
         this.mongo = mongo;
         this.migration = migration;
+        this.loyalty = loyalty;
     }
 
     @Override
@@ -93,6 +94,8 @@ public class SampleDataSeeder implements ApplicationRunner {
                 }
             }
         }
+        seedCustomerVouchers(anchor);
+        loyalty.awardCompletedOrders();
         log.info("Catalog ready: {} products, {} variants, {} customers and {} COD orders",
                 productNumber, productNumber * 2, CUSTOMER_COUNT, productNumber * 4);
     }
@@ -118,6 +121,33 @@ public class SampleDataSeeder implements ApplicationRunner {
         insert(promotion, "promotion-welcome", anchor);
     }
 
+    private void seedCustomerVouchers(Instant anchor) {
+        PromotionEntity promotion = new PromotionEntity();
+        promotion.setPromotionCode("MUAXANH20K");
+        promotion.setName("Voucher chào mừng giảm 20.000đ");
+        promotion.setDescription("Giảm 20.000đ cho đơn từ 100.000đ, dành cho khách được cấp voucher.");
+        promotion.setAudience(PromotionEntity.Audience.ASSIGNED_CUSTOMERS);
+        promotion.setTarget(PromotionEntity.Target.ORDER);
+        promotion.setDiscountType(PromotionEntity.DiscountType.FIXED_AMOUNT);
+        promotion.setDiscountValue(amount(20000));
+        promotion.setMinOrderValue(amount(100000));
+        promotion.setStartsAt(anchor);
+        promotion.setPerCustomerLimit(1);
+        promotion.setStatus(ACTIVE);
+        insert(promotion, "promotion-customer-welcome", anchor);
+
+        for (int number = 1; number <= CUSTOMER_COUNT; number++) {
+            CustomerVoucherEntity voucher = new CustomerVoucherEntity();
+            voucher.setCustomerId(id("customer-" + number));
+            voucher.setPromotionId(promotion.getId());
+            voucher.setVoucherCode("MX-WELCOME-" + number);
+            voucher.setStatus(ACTIVE);
+            voucher.setUsageLimit(1);
+            voucher.setIssuedAt(anchor);
+            insert(voucher, "welcome-voucher-" + number, anchor);
+        }
+    }
+
     private void seedPeople(Instant anchor) {
         Instant registered = anchor.minus(90, ChronoUnit.DAYS);
         for (RoleEntity.Code code : RoleEntity.Code.values()) {
@@ -131,7 +161,8 @@ public class SampleDataSeeder implements ApplicationRunner {
             }
         }
 
-        String passwordHash = new BCryptPasswordEncoder().encode(UUID.randomUUID().toString());
+        String passwordHash = new BCryptPasswordEncoder().encode(DEFAULT_PASSWORD);
+        seedEmployee("admin", "Phan Đức Thể", "Chủ cửa hàng", RoleEntity.Code.ADMIN, passwordHash, registered);
         seedEmployee("warehouse", "Trần Minh Phúc", "Nhân viên kho", RoleEntity.Code.WAREHOUSE_STAFF, passwordHash, registered);
         seedEmployee("sales", "Nguyễn Hoài An", "Nhân viên bán hàng", RoleEntity.Code.SALES_STAFF, passwordHash, registered);
 
@@ -182,7 +213,7 @@ public class SampleDataSeeder implements ApplicationRunner {
         account.setUsername(SeedNames.username(key));
         account.setPasswordHash(passwordHash);
         account.setPasswordChangedAt(registered);
-        account.setStatus("LOCKED");
+        account.setStatus(ACTIVE);
         insert(account, "account-" + key, registered);
 
         RoleEntity role = mongo.findOne(Query.query(Criteria.where("code").is(code)), RoleEntity.class);

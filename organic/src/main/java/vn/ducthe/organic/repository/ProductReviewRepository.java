@@ -29,6 +29,18 @@ public class ProductReviewRepository {
                 OrderEntity.class);
     }
 
+    public OrderEntity completedPurchase(String customerId, String productId) {
+        var query = Aggregation.newAggregation(OrderEntity.class,
+                Aggregation.match(Criteria.where("customerId").is(customerId)
+                        .and("status").is("COMPLETED").and("paymentStatus").is("PAID")),
+                Aggregation.sort(Sort.Direction.DESC, "completedAt", "_id"),
+                Aggregation.lookup("order_details", "_id", "orderId", "purchasedItems"),
+                Aggregation.match(Criteria.where("purchasedItems.productId").is(productId)),
+                Aggregation.limit(1),
+                Aggregation.project().andExclude("purchasedItems"));
+        return mongo.aggregate(query, OrderEntity.class).getUniqueMappedResult();
+    }
+
     public OrderDetailEntity purchasedProduct(String orderId, String productId) {
         return mongo.findOne(Query.query(Criteria.where("orderId").is(orderId).and("productId").is(productId)),
                 OrderDetailEntity.class);

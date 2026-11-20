@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.ducthe.organic.common.response.PageData;
 import vn.ducthe.organic.dto.request.ProductReviewRequest;
 import vn.ducthe.organic.dto.response.ReviewResponses.Feed;
+import vn.ducthe.organic.dto.response.ReviewResponses.Eligibility;
 import vn.ducthe.organic.dto.response.ReviewResponses.RatingCount;
 import vn.ducthe.organic.dto.response.ReviewResponses.Review;
 import vn.ducthe.organic.dto.response.ReviewResponses.ReviewForm;
@@ -56,6 +57,17 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         long points = distribution.stream().mapToLong(row -> row.rating() * row.count()).sum();
         return new Feed(total == 0 ? 0 : (double) points / total, total, distribution,
                 PageData.from(reviews.page(productId, page, size, total).map(ProductReviewMapper::toReview)));
+    }
+
+    @Override
+    public Eligibility eligibility(String accountId, String slug) {
+        var customer = auth.customer(accountId);
+        String productId = catalog.productDetail(slug).id();
+        if (reviews.exists(customer.getId(), productId)) {
+            return new Eligibility(false, true, null, productId);
+        }
+        var order = reviews.completedPurchase(customer.getId(), productId);
+        return new Eligibility(order != null, false, order == null ? null : order.getOrderCode(), productId);
     }
 
     @Override

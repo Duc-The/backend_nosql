@@ -11,5 +11,6 @@ public final class ReviewResponses {
     public record Review(String id, String author, int rating, String comment, Instant createdAt, List<Media> media) {}
     public record RatingCount(int rating, long count) {}
     public record Feed(double average, long total, List<RatingCount> distribution, PageData<Review> reviews) {}
+    public record Eligibility(boolean canReview, boolean alreadyReviewed, String orderCode, String productId) {}
     public record ReviewForm(String productName, String productSlug, boolean alreadyReviewed) {}
 }

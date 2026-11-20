@@ -13,8 +13,9 @@ public final class SeedNames {
 
     static String username(String key) {
         return switch (key) {
-            case "warehouse" -> "tranminhphuc";
-            case "sales" -> "nguyenhoaian";
+            case "admin" -> "admin";
+            case "warehouse" -> "warehouse";
+            case "sales" -> "sales";
             default -> {
                 int number = Integer.parseInt(key.substring("customer-".length())) - 1;
                 yield FAMILY[number % FAMILY.length] + GIVEN[number / FAMILY.length] + (number + 1);

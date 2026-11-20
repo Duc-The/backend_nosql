@@ -15,6 +15,7 @@ import vn.ducthe.organic.annotation.CurrentJwt;
 import vn.ducthe.organic.common.response.ApiResponse;
 import vn.ducthe.organic.dto.request.ProductReviewRequest;
 import vn.ducthe.organic.dto.response.ReviewResponses.Feed;
+import vn.ducthe.organic.dto.response.ReviewResponses.Eligibility;
 import vn.ducthe.organic.dto.response.ReviewResponses.Review;
 import vn.ducthe.organic.dto.response.ReviewResponses.ReviewForm;
 import vn.ducthe.organic.service.ProductReviewService;
@@ -33,6 +34,12 @@ public class ProductReviewController {
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "8") @Min(1) @Max(24) int size, HttpServletRequest request) {
         return ApiResponse.ok(reviews.feed(slug, page, size), "Lấy đánh giá sản phẩm thành công", request);
+    }
+
+    @GetMapping("/orders/review-eligibility/{slug}")
+    ResponseEntity<ApiResponse<Eligibility>> eligibility(@CurrentJwt Jwt jwt,
+            @PathVariable @Size(max = 160) String slug, HttpServletRequest request) {
+        return ApiResponse.ok(reviews.eligibility(jwt.getSubject(), slug), "Kiểm tra quyền đánh giá thành công", request);
     }
 
     @GetMapping("/orders/{orderCode}/reviews/{productId}")
